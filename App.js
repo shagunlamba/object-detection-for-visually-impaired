@@ -2,11 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import { cameraWithTensors } from '@tensorflow/tfjs-react-native';
 import { Camera } from 'expo-camera';
 // import { StatusBar } from 'expo-status-bar';
-import { Dimensions, Platform, StyleSheet, View, LogBox } from 'react-native';
+import { Dimensions, Platform, StyleSheet, View, LogBox, TouchableOpacity } from 'react-native';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import * as tf from '@tensorflow/tfjs';
 import Canvas from 'react-native-canvas';
-
+import * as Speech from "expo-speech";
 const TensorCamera  = cameraWithTensors(Camera);
 const { width, height } = Dimensions.get('window');
 
@@ -15,7 +15,7 @@ LogBox.ignoreAllLogs(true);
 export default function App() {
 
   const [model, setModel] = useState();
-
+  const [names, setNames] = useState("");
   let context = useRef();
   let canvas = useRef();
 
@@ -31,7 +31,11 @@ export default function App() {
         //We will draw the rectangles 
 
         drawRectangle(prediction, nextImageTensor);
-
+        console.log("Array of predictions: ", prediction);
+        const classNames = prediction.map((prediction) => {
+          return prediction.class;
+        });
+        setNames(classNames.join());
       }).catch((error)=>{
         console.log(error);
       });
@@ -62,6 +66,12 @@ export default function App() {
     }
 
   }
+  
+  //function for text-to-speech
+  const speak = () => {
+    Speech.speak(names);
+  };
+
 
   const handleCanvas = (can)=> {
     if(can){
@@ -87,6 +97,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+     <TouchableOpacity style={styles.button} onPress={speak}>
       <TensorCamera style = {styles.camera} 
         type = {Camera.Constants.Type.back}
         cameraTextureHeight = {textureDims.height}
@@ -98,10 +109,11 @@ export default function App() {
         autorender = {true}
         useCustomShadersToResize = {false}
       />
-      <Canvas 
+      <Canvas
         style = {styles.canvas} 
         ref = {handleCanvas}
       />
+      </TouchableOpacity>
     </View>
   );
 }
